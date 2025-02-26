@@ -1,152 +1,145 @@
-let currentIndex = 0;
-let buffer = "";
-const gameLetters = document.querySelectorAll('.game-letter');
-let i;
-let j;
-let found = false;
+const letters = document.querySelectorAll('.game-letter');
+const loadingDiv = document.querySelector('.loading');
+const ANSWER_LENGTH = 5;
+const ROUNDS = 6;
 
-async function addNewWord() {
-    const WORD_URL = "https://words.dev-apis.com/word-of-the-day";
-    const response = await fetch(WORD_URL);
-    const processedResponse = await response.json();
-    return processedResponse.word;
-}
+async function init() {
+    let currentGuess = '';
+    let currentRow = 0;
+    let isLoading = true;
+    let done = false;
 
-async function validateWord() {
-    const response = await fetch("https://words.dev-apis.com/validate-word", {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json', 
-        },
-        body: JSON.stringify({word: buffer})
+    // Fetch the word of the day
+    const res = await fetch("https://words.dev-apis.com/word-of-the-day");
+    const resObj = await res.json();
+    const word = resObj.word.toUpperCase();
+    const wordParts = word.split("");
+    isLoading = false;
+    setLoading(isLoading);
+
+    function addLetter(letter) {
+        if (currentGuess.length < ANSWER_LENGTH) {
+            currentGuess += letter;
+        } else {
+            currentGuess = currentGuess.substring(0, currentGuess.length - 1) + letter;
+        }
+
+        letters[ANSWER_LENGTH * currentRow + currentGuess.length - 1].innerText = letter;
+    }
+
+    async function commit() {
+        if (currentGuess.length !== ANSWER_LENGTH) {
+            return;
+        }
+
+        isLoading = true;
+        setLoading(isLoading);
+        const res = await fetch("https://words.dev-apis.com/validate-word", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ word: currentGuess })
+        });
+        const resObj = await res.json();
+        const validWord = resObj.validWord;
+        isLoading = false;
+        setLoading(isLoading);
+
+        if (!validWord) {
+            markInvalidWord();
+            return;
+        }
+
+        const guessParts = currentGuess.split("");
+        const map = makeMap(wordParts);
+
+        // Mark correct letters
+        for (let i = 0; i < ANSWER_LENGTH; i++) {
+            if (guessParts[i] === wordParts[i]) {
+                letters[ANSWER_LENGTH * currentRow + i].classList.add("correct");
+                map[guessParts[i]]--;
+            }
+        }
+
+        // Mark close and wrong letters
+        for (let i = 0; i < ANSWER_LENGTH; i++) {
+            if (guessParts[i] !== wordParts[i]) {
+                if (wordParts.includes(guessParts[i]) && map[guessParts[i]] > 0) {
+                    letters[ANSWER_LENGTH * currentRow + i].classList.add("close");
+                    map[guessParts[i]]--;
+                } else {
+                    letters[ANSWER_LENGTH * currentRow + i].classList.add("wrong");
+                }
+            }
+        }
+
+        if (currentGuess === word) {
+            alert('You win!');
+            document.querySelector('.brand').classList.add("winner");
+            done = true;
+            return;
+        } else if (currentRow === ROUNDS - 1) {
+            alert(`You lose, the word was ${word}`);
+            done = true;
+        }
+
+        currentRow++;
+        currentGuess = '';
+    }
+
+    function backspace() {
+        if (currentGuess.length > 0) {
+            currentGuess = currentGuess.substring(0, currentGuess.length - 1);
+            letters[ANSWER_LENGTH * currentRow + currentGuess.length].innerText = '';
+        }
+    }
+
+    function markInvalidWord() {
+        for (let i = 0; i < ANSWER_LENGTH; i++) {
+            letters[ANSWER_LENGTH * currentRow + i].classList.add('invalid');
+            setTimeout(() => {
+                letters[ANSWER_LENGTH * currentRow + i].classList.remove('invalid');
+            }, 500);
+        }
+    }
+
+    document.addEventListener("keydown", async function handleKeyPress(event) {
+        if (done || isLoading) {
+            return;
+        }
+
+        const action = event.key;
+
+        if (action === "Enter") {
+            commit();
+        } else if (action === "Backspace") {
+            backspace();
+        } else if (isLetter(action)) {
+            addLetter(action.toUpperCase());
+        }
     });
-    const processedResponse = await response.json();
-    return processedResponse;
-}
-
-async function createWord(value) {
-    if(!buffer)
-    {
-        buffer = value;
-    }
-    else {
-        buffer += value;
-    }
 }
 
 function isLetter(letter) {
     return /^[a-zA-Z]$/.test(letter);
 }
 
-function compareWord(str1, str2) {//str1->wordoftheday, str2-buffer
-    let element;
-    str1 = str1.toUpperCase();
-    str2 = str2.toUpperCase();
-
-    if(str1 === str2) {
-        found = true;
-        for (let i = 0; i < 5; i++) {
-            element = document.querySelector(`#letter-${currentIndex - 5 + i}`);
-            if(element) {
-                element.style.backgroundColor = "green";
-            }
-        }
-        setTimeout(() => {
-            alert("Ai câștigat!");
-        }, 500);
-    }
-    else {
-        let letterMap = {};
-        for(let char of str1) {
-            letterMap[char] = (letterMap[char] || 0) + 1;
-        }
-
-        for (let i = 0; i < 5; i++) {
-            element = document.querySelector(`#letter-${currentIndex - 5 + i}`);
-            if (element) {
-                if(str1[i] === str2[i]) {
-                    element.style.backgroundColor = "green";
-                    letterMap[str1[i]]--;
-                }
-            } 
-        }
-
-        for (let i = 0; i < 5; i++) {
-            element = document.querySelector(`#letter-${currentIndex - 5 + i}`);
-            if (element) {
-                if(letterMap[str2[i]] > 0 && element.style.backgroundColor !== "green") {
-                    element.style.backgroundColor = "yellow";
-                    letterMap[str2[i]]--;
-                }
-            } 
-        }
-
-        for (let i = 0; i < 5; i++) {
-            element = document.querySelector(`#letter-${currentIndex - 5 + i}`);
-            if (element && element.style.backgroundColor === "") {
-                element.style.backgroundColor = "grey";
-            }
-        }
-    }
-
-
-    if (!found && currentIndex === 30) {
-        setTimeout(() => {
-            alert("Ai pierdut!");
-        }, 500);
-    }
+function setLoading(isLoading) {
+    loadingDiv.classList.toggle('show', isLoading);
 }
 
-async function verify() {
-    if(buffer.length === 5) {
-        compareWord(await addNewWord(), buffer);
-        buffer = "";
-    }
-}
-
-function deleteLetter() {
-    if(buffer) {
-        currentIndex--;
-        gameLetters[currentIndex].innerText = "";
-        if(buffer.length === 1) {
-            buffer = "";
-        }
-        else if(buffer.length > 0 && buffer.length <= 5) {
-            buffer = buffer.slice(0, -1);
+function makeMap(array) {
+    const obj = {};
+    for (let i = 0; i < array.length; i++) {
+        const letter = array[i];
+        if (obj[letter]) {
+            obj[letter]++;
+        } else {
+            obj[letter] = 1;
         }
     }
+    return obj;
 }
 
-async function init() {
-    document.addEventListener("keydown", async function(event){//PREIA TASTA
-        if(isLetter(event.key) && buffer.length < 5) {
-            gameLetters[currentIndex].innerText = event.key;
-            createWord(event.key);
-            currentIndex++;
-        }
-        else if(currentIndex % 5 === 0 && event.key.toUpperCase() === "ENTER" && currentIndex > 0) {
-            const response = await validateWord();
-            if(await response.validWord) {
-                verify();
-            }
-            else {
-                console.log("invalid");//pui un alert ceva 
-                buffer = "";
-                currentIndex -= 5;
-                for(let i = 0; i < 5; ++i) {
-                    gameLetters[currentIndex + i].innerText = "";
-                }
-            }
-        }
-        else if(event.key.toUpperCase() === "BACKSPACE") {
-            deleteLetter();
-        }
-    })
-}
-
-async function startGame() {
-    await addNewWord();
-    init();
-}
-
-startGame();
+init();
