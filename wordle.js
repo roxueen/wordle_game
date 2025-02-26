@@ -15,7 +15,7 @@ async function addNewWord() {
     console.log("Word of the day:", myWord);
 }
 
-/*async function validateWord(buffer) {
+async function validateWord(buffer) {
     const response = await fetch("https://words.dev-apis.com/validate-word", {
         method: "POST",
         headers: {
@@ -25,16 +25,14 @@ async function addNewWord() {
     });
     const processedResponse = await response.json();
     console.log(processedResponse.validWord); // <- Return the boolean directly
-}*/
+}
 
 async function createWord(value) {
     if(currentIndex % 5 === 0 && currentIndex != 0)
     {
-        //console.log(buffer);
         buffer = value;
     }
     else {
-        //console.log(currentIndex);
         buffer += value;
     }
 }
@@ -54,7 +52,7 @@ function compareWord(str1, str2) {//str1->myWord, str2-buffer
     }
 
     for (let i = 0; i < 5; i++) {
-        element = document.querySelector(`#letter-${currentIndex-5+i}`);
+        element = document.querySelector(`#letter-${currentIndex-4+i}`);
         if (element) {
             element.style.backgroundColor = "grey";
         } 
@@ -63,12 +61,12 @@ function compareWord(str1, str2) {//str1->myWord, str2-buffer
     if(str1 === str2) {
         found = true;
         for (let i = 0; i < 5; i++) {
-            element = document.querySelector(`#letter-${currentIndex-5+i}`);
+            element = document.querySelector(`#letter-${currentIndex-4+i}`);
             if (element) {
                 element.style.backgroundColor = "green";
                 letterMap[str1[i]]--;
             } else {
-                console.log(`Nu am găsit elementul #letter-${currentIndex - 5 + i}`);
+                console.log(`Nu am găsit elementul #letter-${currentIndex - 4 + i}`);
             }
         }
         setTimeout(() => {
@@ -84,7 +82,7 @@ function compareWord(str1, str2) {//str1->myWord, str2-buffer
             for(let j = 0; j < 5; ++j) {
                 if(str1[i] === str2[j]) {
                     //console.log(`str[${i}]=${str1[i]} si str[${j}]=${str2[j]}`); //AICI E C IN LOC DE J
-                    element = document.querySelector(`#letter-${currentIndex-5+j}`);
+                    element = document.querySelector(`#letter-${currentIndex-4+j}`);
                     if(i != j && element.style.backgroundColor != "green" && letterMap[str1[i]] > 0) {
                         element.style.backgroundColor = "yellow";
                     }
@@ -108,14 +106,20 @@ function compareWord(str1, str2) {//str1->myWord, str2-buffer
 
 function stergelitera(value) {
     if(buffer && currentIndex % 5 !== 0) {
-        currentIndex--;
-        buffer = buffer.slice(0, -1);
-        gameLetters[currentIndex].innerText = "";
+        if(currentIndex % 5 !== 0) {
+            buffer = buffer.slice(0, -1);
+            gameLetters[currentIndex].innerText = "";
+            currentIndex--;
+        }
+        else {
+            buffer = "";
+            currentIndex--;
+        }
     }
 }
 
 function verify() {
-    if(buffer && currentIndex % 5 === 0) {
+    if(buffer) {
         compareWord(myWord, buffer);
     }
 }
@@ -123,20 +127,24 @@ function verify() {
 function init() {
     document.addEventListener("keydown", function(event){//PREIA TASTA
         if(isLetter(event.key)) {//VERIFICA DACA ESTE LITERA
-            if(currentIndex < gameLetters.length) {
-                gameLetters[currentIndex].innerText = event.key;
+            if(currentIndex < gameLetters.length ) {
+                if(gameLetters[currentIndex].innerText === "") {
+                    gameLetters[currentIndex].innerText = event.key;
+                }
                 createWord(event.key);
-                if(currentIndex % 5 !== 0 && currentIndex > 0)currentIndex++;
+                if(currentIndex !== 4 && currentIndex !== 9 && currentIndex !== 14 && currentIndex !== 19 && currentIndex !== 24 && currentIndex !== 29) {
+                    currentIndex++;
+                }
             }
         }
         else if(event.key.toUpperCase() === "BACKSPACE") {
             stergelitera();
         }
-        else if(currentIndex % 5 === 0) {
-            if(event.key.toUpperCase() === "ENTER") {
+        else if((currentIndex+1) % 5 === 0 && currentIndex > 0) {
+            if(event.key.toUpperCase() === "ENTER" && gameLetters[currentIndex].innerText !== "") {
                 verify();
+                currentIndex++;
             }
-            
         }
     }
 )
