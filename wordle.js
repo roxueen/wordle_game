@@ -22,7 +22,7 @@ async function validateWord() {
         body: JSON.stringify({word: buffer})
     });
     const processedResponse = await response.json();
-    console.log(processedResponse.validWord); // <- Return the boolean directly
+    return processedResponse;
 }
 
 async function createWord(value) {
@@ -43,60 +43,57 @@ function compareWord(str1, str2) {//str1->wordoftheday, str2-buffer
     let element;
     str1 = str1.toUpperCase();
     str2 = str2.toUpperCase();
-    let letterMap = {};
 
-    for(let char of str1) {
-        letterMap[char] = (letterMap[char] || 0) + 1;
-    }
-
-    for (let i = 0; i < 5; i++) {
-        element = document.querySelector(`#letter-${currentIndex - 5 + i}`);
-        if (element) {
-            element.style.backgroundColor = "grey";
-        } 
-    }
-    
     if(str1 === str2) {
         found = true;
         for (let i = 0; i < 5; i++) {
             element = document.querySelector(`#letter-${currentIndex - 5 + i}`);
-            if (element) {
+            if(element) {
                 element.style.backgroundColor = "green";
-                letterMap[str1[i]]--;
-            } else {
-                console.log(`Nu am găsit elementul #letter-${currentIndex - 5 + i}`);
             }
         }
         setTimeout(() => {
             alert("Ai câștigat!");
         }, 500);
-
-        currentIndex = 30;
     }
-
     else {
-        //console.log(`${str1} si ${str2}`);//intra ok aici
-        for(let i = 0; i < 5; ++i) {
-            for(let j = 0; j < 5; ++j) {
-                if(str1[i] === str2[j]) {
-                    console.log(`str[${i}]=${str1[i]} si str[${j}]=${str2[j]}`); //AICI E C IN LOC DE J
-                    element = document.querySelector(`#letter-${currentIndex - 5 + j}`);
-                    if(i === j && letterMap[str1[i]] > 0){
-                        element.style.backgroundColor = "green";
-                    }
-                    else if(i !== j && letterMap[str1[i]] > 0) {
-                        element.style.backgroundColor = "yellow";
-                    }
-                    letterMap[str1[i]]--;
-                }
-            }
+        let letterMap = {};
+        for(let char of str1) {
+            letterMap[char] = (letterMap[char] || 0) + 1;
         }
 
+        for (let i = 0; i < 5; i++) {
+            element = document.querySelector(`#letter-${currentIndex - 5 + i}`);
+            if (element) {
+                if(str1[i] === str2[i]) {
+                    element.style.backgroundColor = "green";
+                    letterMap[str1[i]]--;
+                }
+            } 
+        }
+
+        for (let i = 0; i < 5; i++) {
+            element = document.querySelector(`#letter-${currentIndex - 5 + i}`);
+            if (element) {
+                if(letterMap[str2[i]] > 0 && element.style.backgroundColor !== "green") {
+                    element.style.backgroundColor = "yellow";
+                    letterMap[str2[i]]--;
+                }
+            } 
+        }
+
+        for (let i = 0; i < 5; i++) {
+            element = document.querySelector(`#letter-${currentIndex - 5 + i}`);
+            if (element && element.style.backgroundColor === "") {
+                element.style.backgroundColor = "grey";
+            }
+        }
     }
+
 
     if (!found && currentIndex === 30) {
         setTimeout(() => {
-            alert("AI pierdut!");
+            alert("Ai pierdut!");
         }, 500);
     }
 }
@@ -118,7 +115,6 @@ function deleteLetter() {
         else if(buffer.length > 0 && buffer.length <= 5) {
             buffer = buffer.slice(0, -1);
         }
-        console.log(buffer, currentIndex);
     }
 }
 
