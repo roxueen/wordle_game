@@ -1,13 +1,12 @@
 let currentIndex = 0;
 let buffer = "";
 const gameLetters = document.querySelectorAll('.game-letter');
-const WORD_URL = "https://words.dev-apis.com/word-of-the-day";
 let i;
 let j;
-const ap = new Array(5).fill(0);
 let found = false;
 
 async function addNewWord() {
+    const WORD_URL = "https://words.dev-apis.com/word-of-the-day";
     const response = await fetch(WORD_URL);
     const processedResponse = await response.json();
     return processedResponse.word;
@@ -118,41 +117,31 @@ function deleteLetter() {
     }
 }
 
-function init() {
-    document.addEventListener("keydown", function(event){//PREIA TASTA
+async function init() {
+    document.addEventListener("keydown", async function(event){//PREIA TASTA
         if(isLetter(event.key) && buffer.length < 5) {
             gameLetters[currentIndex].innerText = event.key;
             createWord(event.key);
             currentIndex++;
         }
         else if(currentIndex % 5 === 0 && event.key.toUpperCase() === "ENTER" && currentIndex > 0) {
-            verify();
+            const response = await validateWord();
+            if(await response.validWord) {
+                verify();
+            }
+            else {
+                console.log("invalid");//pui un alert ceva 
+                buffer = "";
+                currentIndex -= 5;
+                for(let i = 0; i < 5; ++i) {
+                    gameLetters[currentIndex + i].innerText = "";
+                }
+            }
         }
         else if(event.key.toUpperCase() === "BACKSPACE") {
             deleteLetter();
         }
-        /*if(isLetter(event.key)) {//VERIFICA DACA ESTE LITERA
-            if(currentIndex < gameLetters.length ) {
-                if(gameLetters[currentIndex].innerText === "") {
-                    gameLetters[currentIndex].innerText = event.key;
-                }
-                createWord(event.key);
-                if(currentIndex !== 4 && currentIndex !== 9 && currentIndex !== 14 && currentIndex !== 19 && currentIndex !== 24 && currentIndex !== 29) {
-                    currentIndex++;
-                }
-            }
-        }
-        else if(event.key.toUpperCase() === "BACKSPACE") {
-            stergelitera();
-        }
-        else if((currentIndex+1) % 5 === 0 && currentIndex > 0) {
-            if(event.key.toUpperCase() === "ENTER" && gameLetters[currentIndex].innerText !== "") {
-                verify();
-                currentIndex++;
-            }
-        }*/
-    }
-)
+    })
 }
 
 async function startGame() {
