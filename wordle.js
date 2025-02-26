@@ -18,10 +18,13 @@ async function addNewWord() {
 /*async function validateWord(buffer) {
     const response = await fetch("https://words.dev-apis.com/validate-word", {
         method: "POST",
+        headers: {
+            'Content-Type': 'application/json', 
+        },
         body: JSON.stringify({word: buffer})
     });
     const processedResponse = await response.json();
-    return processedResponse.validWord; // <- Return the boolean directly
+    console.log(processedResponse.validWord); // <- Return the boolean directly
 }*/
 
 async function createWord(value) {
@@ -31,10 +34,8 @@ async function createWord(value) {
         buffer = value;
     }
     else {
+        //console.log(currentIndex);
         buffer += value;
-        if((currentIndex+1) % 5 === 0) {
-            compareWord(myWord, buffer);
-        }
     }
 }
 
@@ -53,7 +54,7 @@ function compareWord(str1, str2) {//str1->myWord, str2-buffer
     }
 
     for (let i = 0; i < 5; i++) {
-        element = document.querySelector(`#letter-${currentIndex-4+i}`);
+        element = document.querySelector(`#letter-${currentIndex-5+i}`);
         if (element) {
             element.style.backgroundColor = "grey";
         } 
@@ -62,28 +63,28 @@ function compareWord(str1, str2) {//str1->myWord, str2-buffer
     if(str1 === str2) {
         found = true;
         for (let i = 0; i < 5; i++) {
-            element = document.querySelector(`#letter-${currentIndex-4+i}`);
+            element = document.querySelector(`#letter-${currentIndex-5+i}`);
             if (element) {
                 element.style.backgroundColor = "green";
                 letterMap[str1[i]]--;
             } else {
-                console.log(`Nu am găsit elementul #letter-${currentIndex - 4 + i}`);
+                console.log(`Nu am găsit elementul #letter-${currentIndex - 5 + i}`);
             }
         }
-        /*setTimeout(() => {
+        setTimeout(() => {
             alert("Ai câștigat!");
-        }, 500); */
-        alert("ai castigat");
+        }, 500);
 
         currentIndex = 30;
     }
+
     else {
         //console.log(`${str1} si ${str2}`);//intra ok aici
         for(let i = 0; i < 5; ++i) {
             for(let j = 0; j < 5; ++j) {
                 if(str1[i] === str2[j]) {
                     //console.log(`str[${i}]=${str1[i]} si str[${j}]=${str2[j]}`); //AICI E C IN LOC DE J
-                    element = document.querySelector(`#letter-${currentIndex-4+j}`);
+                    element = document.querySelector(`#letter-${currentIndex-5+j}`);
                     if(i != j && element.style.backgroundColor != "green" && letterMap[str1[i]] > 0) {
                         element.style.backgroundColor = "yellow";
                     }
@@ -103,8 +104,6 @@ function compareWord(str1, str2) {//str1->myWord, str2-buffer
         }, 500);
 
     }
-        
-    
 }
 
 function stergelitera(value) {
@@ -115,17 +114,29 @@ function stergelitera(value) {
     }
 }
 
+function verify() {
+    if(buffer && currentIndex % 5 === 0) {
+        compareWord(myWord, buffer);
+    }
+}
+
 function init() {
     document.addEventListener("keydown", function(event){//PREIA TASTA
         if(isLetter(event.key)) {//VERIFICA DACA ESTE LITERA
             if(currentIndex < gameLetters.length) {
                 gameLetters[currentIndex].innerText = event.key;
                 createWord(event.key);
-                currentIndex++;
+                if(currentIndex % 5 !== 0 && currentIndex > 0)currentIndex++;
             }
         }
         else if(event.key.toUpperCase() === "BACKSPACE") {
             stergelitera();
+        }
+        else if(currentIndex % 5 === 0) {
+            if(event.key.toUpperCase() === "ENTER") {
+                verify();
+            }
+            
         }
     }
 )
